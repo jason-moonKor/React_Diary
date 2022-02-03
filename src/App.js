@@ -1,48 +1,8 @@
 import "./App.css";
 import DiaryEditor from "./DiaryEditor";
 import DiaryList from "./DiaryList";
-import {useRef, useState, useEffect} from "react";
-// import LifeCycle from "./LifeCycle";
-
-// https://jsonplaceholder.typicode.com/comments
-
-// const dummyList = [
-// 	{
-// 		id: 1,
-// 		author: "문재상",
-// 		content: "하이 1",
-// 		emotion: 5,
-// 		created_date: new Date().getTime()
-// 	},
-// 	{
-// 		id: 2,
-// 		author: " 홍길동",
-// 		content: "하이 2",
-// 		emotion: 1,
-// 		created_date: new Date().getTime()
-// 	},
-// 	{
-// 		id: 3,
-// 		author: "이순신",
-// 		content: "하이 3",
-// 		emotion: 4,
-// 		created_date: new Date().getTime()
-// 	},
-// 	{
-// 		id: 4,
-// 		author: "제이슨",
-// 		content: "하이 4",
-// 		emotion: 2,
-// 		created_date: new Date().getTime()
-// 	},
-// 	{
-// 		id: 5,
-// 		author: "이재용",
-// 		content: "하이 5",
-// 		emotion: 3,
-// 		created_date: new Date().getTime()
-// 	}
-// ];
+import {useRef, useState, useEffect, useMemo} from "react";
+import OptimizeTest from "./OptimizeTest";
 
 function App() {
 	const [data, setData] = useState([]);
@@ -52,6 +12,7 @@ function App() {
 		const res = await fetch(
 			"https://jsonplaceholder.typicode.com/comments"
 		).then((res) => res.json());
+
 		const initData = res.slice(0, 20).map((it) => {
 			return {
 				author: it.email,
@@ -82,7 +43,6 @@ function App() {
 	};
 
 	const onRemove = (targetId) => {
-		console.log(`${targetId}가 삭제되었습니다`);
 		const newDiaryList = data.filter((it) => it.id !== targetId);
 		console.log(newDiaryList);
 		setData(newDiaryList);
@@ -94,10 +54,22 @@ function App() {
 		);
 	};
 
+	const getDiaryAnalysis = useMemo(() => {
+		const goodCount = data.filter((it) => it.emotion >= 3).length;
+		const badCount = data.length - goodCount;
+		const goodRatio = (goodCount / data.length) * 100;
+		return {goodCount, badCount, goodRatio};
+	}, [data.length]);
+
+	const {goodCount, badCount, goodRatio} = getDiaryAnalysis;
 	return (
 		<div className="App">
-			{/* <LifeCycle /> */}
+			<OptimizeTest />
 			<DiaryEditor onCreate={onCreate} />
+			<div>전체 일기 : {data.length}</div>
+			<div>기분 좋은 일기 : {goodCount}</div>
+			<div>기분 나쁜 일기 : {badCount}</div>
+			<div>기분 좋은 일기 비율 : {goodRatio} %</div>
 			<DiaryList onEdit={onEdit} onRemove={onRemove} diaryList={data} />
 		</div>
 	);
