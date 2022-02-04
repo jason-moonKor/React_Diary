@@ -1,11 +1,40 @@
 import "./App.css";
 import DiaryEditor from "./DiaryEditor";
 import DiaryList from "./DiaryList";
-import {useRef, useState, useEffect, useMemo} from "react";
-import OptimizeTest from "./OptimizeTest";
+import {useRef, useEffect, useMemo, useCallback, useReducer} from "react";
+// import OptimizeTest from "./OptimizeTest";
+
+const reducer = (state, action) => {
+	switch (action.type) {
+		case "INIT": {
+			return action.data;
+		}
+		case "CREATE": {
+			const created_date = new Date().getTime();
+			const newItem = {
+				...action.data,
+				created_date
+			};
+			return [newItem, ...state];
+		}
+		case "REMOVE": {
+			return state.filter((it) => it.id !== action.targetId);
+		}
+		case "EDIT": {
+			return state.map((it) =>
+				it.id === action.targetId ? {...it, content: action.newContent} : it
+			);
+		}
+		default:
+			return state;
+	}
+};
 
 function App() {
-	const [data, setData] = useState([]);
+	// const [data, setData] = useState([]);
+
+	const [data, dispatch] = useReducer(reducer, []);
+
 	const dataId = useRef(0);
 
 	const getData = async () => {
@@ -22,37 +51,44 @@ function App() {
 				id: dataId.current++
 			};
 		});
-		setData(initData);
+		dispatch({type: "INIT", data: initData});
+		// setData(initData);
 	};
 
 	useEffect(() => {
 		getData();
 	}, []);
 
-	const onCreate = (author, content, emotion) => {
-		const created_date = new Date().getTime();
-		const newItem = {
-			author,
-			content,
-			emotion,
-			created_date,
-			id: dataId.current
-		};
+	const onCreate = useCallback((author, content, emotion) => {
+		dispatch({
+			type: "CREATE",
+			data: {author, content, emotion, id: dataId.current}
+		});
+
+		// const created_date = new Date().getTime();
+		// const newItem = {
+		// 	author,
+		// 	content,
+		// 	emotion,
+		// 	created_date,
+		// 	id: dataId.current
+		// };
 		dataId.current += 1;
-		setData([newItem, ...data]);
-	};
+		// setData((data) => [newItem, ...data]);
+	}, []);
 
-	const onRemove = (targetId) => {
-		const newDiaryList = data.filter((it) => it.id !== targetId);
-		console.log(newDiaryList);
-		setData(newDiaryList);
-	};
+	const onRemove = useCallback((targetId) => {
+		dispatch({type: "REMOVE", targetId});
+		// setData((data) => data.filter((it) => it.id !== targetId));
+	}, []);
 
-	const onEdit = (targetId, newContent) => {
-		setData(
-			data.map((it) => (it.id === targetId ? {...it, content: newContent} : it))
-		);
-	};
+	const onEdit = useCallback((targetId, newContent) => {
+		dispatch({type: "EDIT", targetId, newContent});
+
+		// setData((data) =>
+		// 	data.map((it) => (it.id === targetId ? {...it, content: newContent} : it))
+		// );
+	}, []);
 
 	const getDiaryAnalysis = useMemo(() => {
 		const goodCount = data.filter((it) => it.emotion >= 3).length;
@@ -64,7 +100,7 @@ function App() {
 	const {goodCount, badCount, goodRatio} = getDiaryAnalysis;
 	return (
 		<div className="App">
-			<OptimizeTest />
+			{/* <OptimizeTest /> */}
 			<DiaryEditor onCreate={onCreate} />
 			<div>전체 일기 : {data.length}</div>
 			<div>기분 좋은 일기 : {goodCount}</div>
